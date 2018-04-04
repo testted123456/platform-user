@@ -1,4 +1,4 @@
-package com.nonobank.platformuser.conf;
+package com.nonobank.platformuser.entity.responseEntity;
 
 public enum ResponseCode {
 	SUCCESS(10000, "成功"), 

@@ -1,16 +1,15 @@
 package com.nonobank.platformuser.utils;
 
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 
-import javax.crypto.*;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.security.*;
 import java.util.Arrays;
-
-import javax.crypto.Cipher;
 
 
 /**

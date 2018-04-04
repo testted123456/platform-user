@@ -2,14 +2,12 @@ package com.nonobank.platformuser.service.impl;
 
 import com.nonobank.platformuser.component.LdapComponent;
 import com.nonobank.platformuser.component.MyUserException;
-import com.nonobank.platformuser.conf.ResponseCode;
+import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 import com.nonobank.platformuser.dto.MongoRepository;
 import com.nonobank.platformuser.entity.ldapEntity.LdapUserEntity;
 import com.nonobank.platformuser.entity.mongoEntity.*;
-import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
 import com.nonobank.platformuser.service.UsersService;
 import com.nonobank.platformuser.utils.CharsUtil;
-import com.nonobank.platformuser.utils.ResponseUtil;
 import com.nonobank.platformuser.utils.SecretUtil;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +18,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.management.relation.Role;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.InvalidAlgorithmParameterException;
@@ -28,10 +27,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +41,8 @@ public class UsersServiceImpl implements UsersService {
     private MongoRepository mongoRepository;
 
 
+
+
     @Autowired
     private LdapComponent ldapComponent;
 
@@ -55,11 +53,11 @@ public class UsersServiceImpl implements UsersService {
     private final static boolean DEBUG_FLAG = false;
 
 
-    private static Map<String, String> permission_map;
-
-
     private static Map<String, String> department_map;
 
+    /**
+     * 部门层级
+     */
     static {
         department_map = new HashMap<String, String>();
         department_map.put("1", "department");
@@ -67,13 +65,6 @@ public class UsersServiceImpl implements UsersService {
         department_map.put("3", "departmentThird");
         department_map.put("4", "departmentFourth");
         department_map.put("5", "departmentFifth");
-
-        permission_map = new HashMap<String, String>();
-        permission_map.put("retrieve", "00001");
-        permission_map.put("create", "00010");
-        permission_map.put("update", "00100");
-        permission_map.put("delete", "01000");
-        permission_map.put("exec", "10000");
 
     }
 
@@ -125,43 +116,27 @@ public class UsersServiceImpl implements UsersService {
      * @return
      */
     @Override
-    public ResponseEntity login(String username, String password, String sessionId) {
+    public UsersEntity login(String username, String password, String sessionId) {
 //        连接ldap校验用户名密码是否正确
         boolean result = ldapComponent.loginCheck(username, password);
-
-        if (DEBUG_FLAG) {
-            result = true;
-        }
-
         if (!result) {
             throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "用户名或密码错误");
         }
 //        依据用户名查询用户信息
-        Query userQueryByName = new Query().addCriteria(Criteria.where("username").is(username));
-        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(userQueryByName, UsersEntity.class);
+        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateUsersNameQuery.apply(username), UsersEntity.class);
 
         try {
 //            密码加密
             String encryPass = SecretUtil.encryContent2ByteHexStr(password);
-
 //            首次登陆并授予访客权限
             if (usersEntity == null || usersEntity.get_id() == null) {
-                LdapUserEntity ldapUserEntity = null;
-                if (!DEBUG_FLAG) {
-                    ldapUserEntity = ldapComponent.getUserInfo(username);
-                } else {
-                    ldapUserEntity = new LdapUserEntity();
-                }
+                LdapUserEntity ldapUserEntity = ldapComponent.getUserInfo(username);
                 usersEntity = converLdap2entity(ldapUserEntity);
                 usersEntity.setPassword(encryPass);
-                if (DEBUG_FLAG) {
-                    usersEntity.setUsername(username);
-                }
                 mongoRepository.saveEntity(usersEntity);
-                grantRole2UserById(usersEntity.get_id(), DEFAULT_ROLE);
-
+                grantRole2User(usersEntity, DEFAULT_ROLE);
             }
-//            非首层登陆 判断密码是否更新
+//            非首次登陆 判断密码是否更新
             if (!encryPass.equals(usersEntity.getPassword())) {
                 usersEntity.setPassword(encryPass);
                 mongoRepository.saveEntity(usersEntity);
@@ -170,12 +145,14 @@ public class UsersServiceImpl implements UsersService {
             throw new MyUserException(ResponseCode.UNKOWN_ERROR.getCode(), "登陆异常，数据加密出现异常");
         }
 
-        int permission = getPermission(usersEntity);
-        usersEntity.setPermission(permission);
-
+//        int permission = getPermission(usersEntity);
+//        usersEntity.setPermission(permission);
 //        更新session 并返回权限
+        List<RolesEntity> rolesEntities = this.getRoles(usersEntity);
+        usersEntity.setRoles(rolesEntities);
         SessionsEntity sessionEntity = new SessionsEntity();
         sessionEntity.set_id(sessionId);
+        sessionEntity.setUsername(username);
         LocalDateTime localDateTime = LocalDateTime.now();
         localDateTime = localDateTime.plusHours(8);
         ZoneId zone = ZoneId.systemDefault();
@@ -183,9 +160,7 @@ public class UsersServiceImpl implements UsersService {
         java.util.Date date = Date.from(instant);
         sessionEntity.setExpires(date);
         mongoRepository.saveEntity(sessionEntity);
-
-
-        return ResponseUtil.success(usersEntity);
+        return usersEntity;
     }
 
     /**
@@ -195,27 +170,48 @@ public class UsersServiceImpl implements UsersService {
      * @return
      */
     @Override
-    public ResponseEntity checkSession(String sessionId) {
-
+    public boolean checkSession(String sessionId) {
         SessionsEntity sessionsEntity = (SessionsEntity) mongoRepository.getEntityById(sessionId, SessionsEntity.class);
         if (sessionsEntity == null || sessionsEntity.get_id() == null) {
-            return ResponseUtil.error(ResponseCode.VALIDATION_ERROR.getCode(), "session 失效");
+            return false;
         }
-        return ResponseUtil.success();
+        return true;
     }
 
+
     /**
-     * 依据用户名和角色进行授权
+     * 根据sessionid获取到对应的用户信息
      *
-     * @param userName 用户名
-     * @param role     角色名称
+     * @param sessionId
      * @return
      */
     @Override
-    public ResponseEntity grantRoleToUser(String userName, String role) {
-        grantRole2UserByName(userName, role);
+    public UsersEntity getUserBySessionId(String sessionId) {
+        SessionsEntity sessionsEntity = (SessionsEntity) mongoRepository.getEntityById(sessionId, SessionsEntity.class);
+        if(sessionsEntity!=null){
+            String username = sessionsEntity.getUsername();
+            return this.getUsersEntityByName(username);
+        }
+        return null;
 
-        return ResponseUtil.success();
+    }
+
+
+    /**
+     * 根据用户名查找用户信息并
+     *
+     * @param userName 用户名
+     * @return
+     */
+    @Override
+    public UsersEntity getUsersEntityByName(String userName) {
+        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateUsersNameQuery.apply(userName), UsersEntity.class);
+        List<RolesEntity> rolesEntities = this.getRoles(usersEntity);
+        usersEntity.setRoles(rolesEntities);
+//        int permission = getPermission(usersEntity);
+//        usersEntity.setPermission(permission);
+        return usersEntity;
+
     }
 
     /**
@@ -224,28 +220,53 @@ public class UsersServiceImpl implements UsersService {
      * @param userName
      * @param roleName
      */
-    public void grantRole2UserByName(String userName, String roleName) {
-        Query roleQuery = new Query().addCriteria(Criteria.where("username").is(userName));
-        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(roleQuery, UsersEntity.class);
-        grantRole2UserById(usersEntity.get_id(), roleName);
+    @Override
+    public boolean grantRoleToUser(String userName, String roleName) {
+        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateUsersNameQuery.apply(userName), UsersEntity.class);
+        grantRole2User(usersEntity, roleName);
+        return true;
     }
 
 
     /**
      * 依据用户id和角色名进行授权
      *
-     * @param userId
+     * @param usersEntity
      * @param roleName
      */
-    public void grantRole2UserById(String userId, String roleName) {
-        Query roleQuery = new Query().addCriteria(Criteria.where("rolename").is(roleName));
-        RolesEntity rolesEntity = (RolesEntity) mongoRepository.getOneEntityByWhere(roleQuery, RolesEntity.class);
+    public void grantRole2User(UsersEntity usersEntity, String roleName) {
+        RolesEntity rolesEntity = (RolesEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateRoleNameQuery.apply(roleName), RolesEntity.class);
         UserrolesEntity userrolesEntity = new UserrolesEntity();
-        userrolesEntity.setUser(new ObjectId(userId));
+        userrolesEntity.setUser(new ObjectId(usersEntity.get_id()));
         userrolesEntity.setRole(new ObjectId(rolesEntity.get_id()));
+        List<RolesEntity> roles = usersEntity.getRoles() == null ? new ArrayList<RolesEntity>() : usersEntity.getRoles();
+        roles.add(rolesEntity);
+        usersEntity.setRoles(roles);
         mongoRepository.saveEntity(userrolesEntity);
+        mongoRepository.saveEntity(usersEntity);
 
     }
+
+
+    /**
+     * 获取角色列表
+     *
+     * @param usersEntity
+     * @return
+     */
+    public List<RolesEntity> getRoles(UsersEntity usersEntity) {
+        List<RolesEntity> rolesEntities = usersEntity.getRoles();
+        if (rolesEntities==null){
+            List<UserrolesEntity> userrolesEntityList = (List<UserrolesEntity>) mongoRepository.getEntitysByWhere(MongoRepository.generateUserRoleByUserIdQuery.apply(usersEntity.get_id()), UserrolesEntity.class);
+            rolesEntities =  userrolesEntityList.stream().map(userrole -> (RolesEntity) mongoRepository.getEntityById(userrole.getRole().toString(), RolesEntity.class)).collect(Collectors.toList());
+            return rolesEntities;
+        }
+        rolesEntities = rolesEntities.stream().map(rolesEntity -> (RolesEntity)mongoRepository.getEntityById(rolesEntity.getRole(), RolesEntity.class)).collect(Collectors.toList());
+        return rolesEntities;
+
+
+    }
+
 
     /**
      * 获取用户权限
@@ -258,33 +279,25 @@ public class UsersServiceImpl implements UsersService {
         int permissionCode = 0;
 
         Query userRoleQuery = new Query().addCriteria(Criteria.where("user").is(new ObjectId(usersEntity.get_id())));
-        UserrolesEntity userrolesEntity = (UserrolesEntity) mongoRepository.getOneEntityByWhere(userRoleQuery, UserrolesEntity.class);
-        if (userrolesEntity == null) {
+
+        List<UserrolesEntity> userrolesEntityList = (List<UserrolesEntity>) mongoRepository.getEntitysByWhere(userRoleQuery, UserrolesEntity.class);
+
+        if (userrolesEntityList == null) {
             throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "用户未分配角色，无法登陆");
         }
-        Query rolepermissionQuery = new Query().addCriteria(Criteria.where("role").is(userrolesEntity.getRole()).and("rights").ne(0));
-        List<RolepermissionsEntity> rolepermissionsEntitys = (List<RolepermissionsEntity>) mongoRepository.getEntitysByWhere(rolepermissionQuery, RolepermissionsEntity.class);
-        List<String> permissionIds = rolepermissionsEntitys.stream().map(rolePerm -> rolePerm.getPermission().toString()).collect(Collectors.toList());
-        Query permissionsQeury = new Query().addCriteria(Criteria.where("_id").in(permissionIds));
-        List<PermissionsEntity> permissionsEntities = (List<PermissionsEntity>) mongoRepository.getEntitysByWhere(permissionsQeury, PermissionsEntity.class);
+        for (UserrolesEntity userrolesEntity : userrolesEntityList) {
+            Query rolepermissionQuery = new Query().addCriteria(Criteria.where("role").is(userrolesEntity.getRole()).and("rights").ne(0));
+            List<RolepermissionsEntity> rolepermissionsEntitys = (List<RolepermissionsEntity>) mongoRepository.getEntitysByWhere(rolepermissionQuery, RolepermissionsEntity.class);
+            List<String> permissionIds = rolepermissionsEntitys.stream().map(rolePerm -> rolePerm.getPermission().toString()).collect(Collectors.toList());
+            Query permissionsQeury = new Query().addCriteria(Criteria.where("_id").in(permissionIds));
+            List<PermissionsEntity> permissionsEntities = (List<PermissionsEntity>) mongoRepository.getEntitysByWhere(permissionsQeury, PermissionsEntity.class);
 
-        for (PermissionsEntity p : permissionsEntities) {
-            permissionCode = permissionCode|p.getRights();
+            for (PermissionsEntity p : permissionsEntities) {
+                permissionCode = permissionCode | p.getRights();
+            }
         }
+
         return permissionCode;
     }
 
-
-    public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-//        String name = "CN=喻桥艺,OU=业务测试组,OU=质量控制部QC,OU=技术中心,OU=nonobank,DC=server,DC=nonobank,DC=com";
-//        LdapUserEntity ldapUserEntity = new LdapUserEntity();
-//        ldapUserEntity.setMail("yu@nonobank.com");
-//        ldapUserEntity.setDisplayName("顶顶顶顶");
-//        ldapUserEntity.setMailNickname("yu");
-//        ldapUserEntity.setDistinguishedName(name);
-//        UsersEntity usersEntity = converLdap2entity(ldapUserEntity);
-//        System.out.println("ok");
-//        System.out.println(Integer.valueOf("00001", 2)|Integer.valueOf("00010", 2));
-        System.out.println(Integer.toBinaryString(3));
-    }
 }

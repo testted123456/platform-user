@@ -16,7 +16,6 @@ public class RolesEntity extends BaseEntity{
     private Date createTime;
     private String permissions;
     private String menus;
-
     private boolean status;
     private String role;
 

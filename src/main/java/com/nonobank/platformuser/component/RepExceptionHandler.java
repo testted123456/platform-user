@@ -1,8 +1,8 @@
 package com.nonobank.platformuser.component;
 
-import com.nonobank.platformuser.conf.ResponseCode;
+import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
-import com.nonobank.platformuser.utils.ResponseUtil;
+import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ControllerAdvice;

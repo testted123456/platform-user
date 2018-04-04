@@ -1,20 +1,15 @@
 package com.nonobank.platformuser.db;
 
 import com.nonobank.platformuser.dto.MongoRepository;
-
-import com.nonobank.platformuser.entity.mongoEntity.*;
-import org.bson.types.ObjectId;
+import com.nonobank.platformuser.entity.mongoEntity.PermissionsEntity;
+import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by tangrubei on 2018/2/24.
@@ -33,10 +28,10 @@ public class MongoTest {
      */
     public void exampleTest() {
 
-        SessionEntity sessionEntity = new SessionEntity();
-        sessionEntity.setExpires(new Date());
-        mongoRepository.saveEntity(sessionEntity);
-        System.out.println("ok");
+//        SessionEntity sessionEntity = new SessionEntity();
+//        sessionEntity.setExpires(new Date());
+//        mongoRepository.saveEntity(sessionEntity);
+//        System.out.println("ok");
 //        int i=5;
 //        for(;i<10;i++){
 //            SessionEntity sessionEntity = new SessionEntity();
@@ -53,10 +48,10 @@ public class MongoTest {
 
 
     @Test
-    public void userSearchTest(){
-        UsersEntity usersEntity = new UsersEntity();
-        usersEntity.setUsername("tangrubei5");
-        mongoRepository.saveEntity(usersEntity);
+    public void userSearchTest() {
+//        UsersEntity usersEntity = new UsersEntity();
+//        usersEntity.setUsername("tangrubei5");
+//        mongoRepository.saveEntity(usersEntity);
 //        UsersEntity usersEntity = usersDao.getUserById("591dd85c6dfe2725e663e735");
 //        System.out.println(usersEntity.getNickname());
 
@@ -67,7 +62,7 @@ public class MongoTest {
     }
 
     @Test
-    public void insertUserEntity(){
+    public void insertUserEntity() {
 //        UsersEntity usersEntity = new UsersEntity();
 //        usersEntity.setEmail("test@nonobank.com");
 //        usersEntity.setUsername("testbyidea");
@@ -85,19 +80,20 @@ public class MongoTest {
 
 
     @Test
-    public void userEntityTest2(){
+    public void userEntityTest2() {
 
         int permissionCode = 0;
 
+        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateUsersNameQuery.apply("tangrubei"),UsersEntity.class);
+        System.out.println("ok");
+
 //        Query permissionQuer = new Query().addCriteria(Criteria.where(""))
-        PermissionsEntity permissionsEntity = (PermissionsEntity) mongoRepository.getEntityById("591d691ff5f93b26abedad6a",PermissionsEntity.class);
+//        PermissionsEntity permissionsEntity = (PermissionsEntity) mongoRepository.getEntityById("591d691ff5f93b26abedad6a", PermissionsEntity.class);
 
 //        Query rolePermissionQuery = new Query().addCriteria(Criteria.where("role").is(new ObjectId("591dd7ba6dfe2725e663e734")).and("rights").ne(0));
 //
 //        List<RolepermissionsEntity> rolepermissionsEntity = (List<RolepermissionsEntity>) mongoRepository.getEntitysByWhere(rolePermissionQuery,RolepermissionsEntity.class);
-        System.out.println("ok");
-
-
+//        System.out.println("ok");
 
 
 //        Query roleQuery = new Query().addCriteria(Criteria.where("rolename").is("guest"));
@@ -107,7 +103,6 @@ public class MongoTest {
 //        userrolesEntity1.setRole(new ObjectId(rolesEntity.get_id()));
 //
 //        mongoRepository.saveEntity(userrolesEntity1);
-
 
 
 //        Query userRoleQuery = new Query().addCriteria(Criteria.where("user").is("591dd85c6dfe2725e663e735"));
@@ -153,10 +148,6 @@ public class MongoTest {
 //        }
 
 
-
-
-
-
 //        UserrolesEntity userrolesEntity = (UserrolesEntity) mongoRepository.getOneEntityByWhere(userRoleQuery,UserrolesEntity.class);
 //
 //        RolesEntity rolesEntity = (RolesEntity) mongoRepository.getEntityById("591dd7ba6dfe2725e663e734",RolesEntity.class);
@@ -164,8 +155,6 @@ public class MongoTest {
 
 
     }
-
-
 
 
 }

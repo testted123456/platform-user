@@ -29,6 +29,7 @@ public class LdapConf {
         ldapContextSource.setPassword("Shield@NONO");
         ldapContextSource.afterPropertiesSet();
 
+
         return ldapContextSource;
     }
 

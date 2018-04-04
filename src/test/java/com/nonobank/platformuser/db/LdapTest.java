@@ -27,10 +27,10 @@ public class LdapTest {
     public void test(){
 
         boolean b = ldapComponent.loginCheck("tangrubei","Pass2018@");
-        System.out.println(b);
-
-        LdapUserEntity ldapUserEntity = ldapComponent.getUserInfo("tangrubei");
-        System.out.println(ldapUserEntity.getDistinguishedName());
+//        System.out.println(b);
+//
+//        LdapUserEntity ldapUserEntity = ldapComponent.getUserInfo("tangrubei");
+//        System.out.println(ldapUserEntity.getDistinguishedName());
 
     }
 }

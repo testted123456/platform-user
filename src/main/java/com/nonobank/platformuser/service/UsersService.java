@@ -8,9 +8,14 @@ import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
  */
 public interface UsersService {
 
-    public ResponseEntity login(String username, String password,String sessionId);
+    public UsersEntity login(String username, String password,String sessionId);
 
-    public ResponseEntity checkSession(String sessionId);
+    public boolean checkSession(String sessionId);
 
-    public ResponseEntity grantRoleToUser(String userName,String role);
+    public boolean grantRoleToUser(String userName,String role);
+
+    public UsersEntity getUsersEntityByName(String userName);
+
+
+    public UsersEntity getUserBySessionId(String sessionId);
 }

@@ -30,41 +30,39 @@ public class LdapComponent {
     private final String LDAP_BASE = "OU=nonobank";
 
 
-//  查询后缀
+    //  查询后缀
     private static final String MAI_SUFFIX = "@nonobank.com";
 
-//  查询属性
+    //  查询属性
     private static final String ATT_FILTER_NAME = "mail";
 
 
-//  创建用户名的过滤器
-    private static Function<String,Filter> function_mailFilter = username->new EqualsFilter(ATT_FILTER_NAME, username + MAI_SUFFIX);
-
-
-
+    //  创建用户名的过滤器
+    private static Function<String, Filter> function_mailFilter = username -> new EqualsFilter(ATT_FILTER_NAME, username + MAI_SUFFIX);
 
 
     /**
      * 根据attr属性，动态构建
+     *
      * @return
      */
-    private static AttributesMapper getAttMappter(){
+    private static AttributesMapper getAttMappter() {
         return new AttributesMapper() {
             @Override
             public Object mapFromAttributes(Attributes attributes) throws javax.naming.NamingException {
                 LdapUserEntity ldapUserEntity = new LdapUserEntity();
                 Field[] fields = ldapUserEntity.getClass().getDeclaredFields();
-                for(Field field:fields){
+                for (Field field : fields) {
                     Attribute att = attributes.get(field.getName());
                     String setMethodName = CharsUtil.createSetMethodName(CharsUtil.functionFirstLetterUp.apply(field.getName()));
                     try {
-                        Method method = ldapUserEntity.getClass().getDeclaredMethod(setMethodName,String.class);
-                        if (att!=null){
-                            method.invoke(ldapUserEntity,String.valueOf(att.get()));
+                        Method method = ldapUserEntity.getClass().getDeclaredMethod(setMethodName, String.class);
+                        if (att != null) {
+                            method.invoke(ldapUserEntity, String.valueOf(att.get()));
                         }
-                    } catch (NoSuchMethodException|IllegalAccessException|InvocationTargetException e) {
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                         e.printStackTrace();
-                        throw new RuntimeException(e.getCause()+e.getMessage());
+                        throw new RuntimeException(e.getCause() + e.getMessage());
                     }
                 }
                 return ldapUserEntity;
@@ -75,6 +73,7 @@ public class LdapComponent {
 
     /**
      * 根据用户名密码校验用户是否可登陆
+     *
      * @param username 用户名
      * @param Password 密码
      * @return
@@ -85,14 +84,15 @@ public class LdapComponent {
 
     /**
      * 根据用户名查找用户信息
+     *
      * @param username
      * @return 返回封装好的用户信息
      */
-    public LdapUserEntity getUserInfo(String username){
-        List<LdapUserEntity> list = ldapTemplate.search(LDAP_BASE, function_mailFilter.apply(username).encode(),LdapComponent.getAttMappter());
-        if (list!=null&&list.size()>0){
+    public LdapUserEntity getUserInfo(String username) {
+        List<LdapUserEntity> list = ldapTemplate.search(LDAP_BASE, function_mailFilter.apply(username).encode(), LdapComponent.getAttMappter());
+        if (list != null && list.size() > 0) {
             return list.get(0);
-        }else{
+        } else {
             return null;
         }
     }
@@ -102,7 +102,7 @@ public class LdapComponent {
         LdapUserEntity ldapUserEntity = new LdapUserEntity();
 
         Field[] fields = ldapUserEntity.getClass().getDeclaredFields();
-        Arrays.stream(fields).forEach(f-> System.out.println(f.getName()));
+        Arrays.stream(fields).forEach(f -> System.out.println(f.getName()));
         System.out.println("ok");
 
     }

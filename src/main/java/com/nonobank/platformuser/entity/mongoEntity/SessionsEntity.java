@@ -4,7 +4,7 @@ import java.util.Date;
 
 import org.springframework.data.annotation.Id;
 
-public class SessionsEntity extends BaseEntity{
+public class SessionsEntity extends BaseEntity {
 
 
     private static final long serialVersionUID = -3258839839160856613L;
@@ -14,6 +14,7 @@ public class SessionsEntity extends BaseEntity{
     private String _class;
     private String session;
     private Date expires;
+    private String username;
 
 
     public String get_id() {
@@ -46,5 +47,13 @@ public class SessionsEntity extends BaseEntity{
 
     public void setExpires(Date expires) {
         this.expires = expires;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

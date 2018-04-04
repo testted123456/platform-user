@@ -1,7 +1,7 @@
 package com.nonobank.platformuser.entity.mongoEntity;
 
 import com.nonobank.platformuser.component.MyUserException;
-import com.nonobank.platformuser.conf.ResponseCode;
+import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

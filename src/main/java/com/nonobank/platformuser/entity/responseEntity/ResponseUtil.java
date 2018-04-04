@@ -1,7 +1,7 @@
-package com.nonobank.platformuser.utils;
+package com.nonobank.platformuser.entity.responseEntity;
 
 import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
-import com.nonobank.platformuser.conf.ResponseCode;
+import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 
 public class ResponseUtil {
 
