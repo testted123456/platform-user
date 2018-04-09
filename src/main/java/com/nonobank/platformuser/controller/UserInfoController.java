@@ -60,6 +60,16 @@ public class UserInfoController {
     }
 
 
+    @RequestMapping(value = "logout", method = RequestMethod.GET)
+    public ResponseEntity logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session!=null){
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
+        return ResponseUtil.success();
+    }
+
     @RequestMapping(value = "reoladRoles", method = RequestMethod.GET)
     public ResponseEntity reoladRoles(HttpServletRequest request, @RequestParam String username) {
         UsersEntity usersEntity = usersService.getUsersEntityByName(username);
