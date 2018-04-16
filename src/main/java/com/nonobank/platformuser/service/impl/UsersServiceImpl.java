@@ -2,15 +2,26 @@ package com.nonobank.platformuser.service.impl;
 
 import com.nonobank.platformuser.component.LdapComponent;
 import com.nonobank.platformuser.component.MyUserException;
-import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
-import com.nonobank.platformuser.dto.MongoRepository;
+import com.nonobank.platformuser.component.RemoteComponent;
 import com.nonobank.platformuser.entity.ldapEntity.LdapUserEntity;
 import com.nonobank.platformuser.entity.mongoEntity.*;
+import com.nonobank.platformuser.entity.mysqlEntity.Role;
+import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
+import com.nonobank.platformuser.entity.mysqlEntity.User;
+import com.nonobank.platformuser.entity.mysqlEntity.UserRoles;
+import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
+import com.nonobank.platformuser.repository.MongoRepository;
+import com.nonobank.platformuser.repository.mysqlRepository.RoleRepository;
+import com.nonobank.platformuser.repository.mysqlRepository.RoleUrlPathRepository;
+import com.nonobank.platformuser.repository.mysqlRepository.UserRepository;
+import com.nonobank.platformuser.repository.mysqlRepository.UserRolesRepository;
 import com.nonobank.platformuser.service.UsersService;
 import com.nonobank.platformuser.utils.CharsUtil;
 import com.nonobank.platformuser.utils.SecretUtil;
+import org.apache.http.HttpException;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
@@ -18,7 +29,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.management.relation.Role;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.InvalidAlgorithmParameterException;
@@ -40,11 +51,29 @@ public class UsersServiceImpl implements UsersService {
     @Autowired
     private MongoRepository mongoRepository;
 
+    @Autowired
+    private UserRepository userRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private UserRolesRepository userRolesRepository;
 
 
     @Autowired
+    private RemoteComponent remoteComponent;
+
+
+    @Autowired
+    private RoleUrlPathRepository roleUrlPathRepository;
+
+    @Autowired
     private LdapComponent ldapComponent;
+
+    @Value("${initRemote}")
+    String initRemoteUrls;
+
 
     private final static String INDEX_FLAG = "OU=nonobank";
 
@@ -65,7 +94,6 @@ public class UsersServiceImpl implements UsersService {
         department_map.put("3", "departmentThird");
         department_map.put("4", "departmentFourth");
         department_map.put("5", "departmentFifth");
-
     }
 
 
@@ -105,6 +133,17 @@ public class UsersServiceImpl implements UsersService {
 
         return usersEntity;
 
+    }
+
+
+    private static User createNewUserObj(String username, String password) {
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setOptstatus((short) 0);
+        user.setCreatedTime(LocalDateTime.now());
+        user.setCreatedBy("system");
+        return user;
     }
 
 
@@ -163,6 +202,35 @@ public class UsersServiceImpl implements UsersService {
         return usersEntity;
     }
 
+    @Override
+    public User login(String username, String password) {
+        boolean result = ldapComponent.loginCheck(username, password);
+        if (!result) {
+            throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "用户名或密码错误");
+        }
+
+
+        User user = userRepository.findByUsernameEqualsAndOptstatusNot(username, (short) 2);
+        try {
+//            密码加密
+            String encryPass = SecretUtil.encryContent2ByteHexStr(password);
+//            首次登陆
+            if (user == null || user.getId() == null) {
+                user = createNewUserObj(username, password);
+                userRepository.save(user);
+            }
+//            非首次登陆 判断密码是否更新
+            if (!encryPass.equals(user.getPassword())) {
+                user.setPassword(encryPass);
+                userRepository.save(user);
+            }
+        } catch (NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
+            throw new MyUserException(ResponseCode.UNKOWN_ERROR.getCode(), "登陆异常，数据加密出现异常");
+        }
+        return user;
+    }
+
+
     /**
      * 检查session是否失效
      *
@@ -173,6 +241,7 @@ public class UsersServiceImpl implements UsersService {
     public boolean checkSession(String sessionId) {
         SessionsEntity sessionsEntity = (SessionsEntity) mongoRepository.getEntityById(sessionId, SessionsEntity.class);
         if (sessionsEntity == null || sessionsEntity.get_id() == null) {
+
             return false;
         }
         return true;
@@ -188,7 +257,7 @@ public class UsersServiceImpl implements UsersService {
     @Override
     public UsersEntity getUserBySessionId(String sessionId) {
         SessionsEntity sessionsEntity = (SessionsEntity) mongoRepository.getEntityById(sessionId, SessionsEntity.class);
-        if(sessionsEntity!=null){
+        if (sessionsEntity != null) {
             String username = sessionsEntity.getUsername();
             return this.getUsersEntityByName(username);
         }
@@ -214,6 +283,18 @@ public class UsersServiceImpl implements UsersService {
 
     }
 
+
+    @Override
+    public User getUserByName(String name) {
+        User user = userRepository.findByUsernameEqualsAndOptstatusNot(name, (short) 2);
+        if (user != null) {
+            List<Role> roles = roleRepository.findRoleByUserId(user.getId());
+            user.setRoles(roles);
+
+        }
+        return user;
+    }
+
     /**
      * 依据用户名和角色进行授权
      *
@@ -222,8 +303,16 @@ public class UsersServiceImpl implements UsersService {
      */
     @Override
     public boolean grantRoleToUser(String userName, String roleName) {
-        UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateUsersNameQuery.apply(userName), UsersEntity.class);
-        grantRole2User(usersEntity, roleName);
+        /** ldap 赋角色
+         UsersEntity usersEntity = (UsersEntity) mongoRepository.getOneEntityByWhere(MongoRepository.generateUsersNameQuery.apply(userName), UsersEntity.class);
+         grantRole2User(usersEntity, roleName);
+         **/
+        User user = userRepository.findByUsernameEqualsAndOptstatusNot(userName, (short) 2);
+        Role role = roleRepository.findRoleByRoleNameEqualsAndOptstatusNot(roleName, (short) 2);
+        UserRoles userRoles = new UserRoles();
+        userRoles.setUserId(user.getId());
+        userRoles.setRoleId(role.getId());
+        userRolesRepository.save(userRoles);
         return true;
     }
 
@@ -256,12 +345,12 @@ public class UsersServiceImpl implements UsersService {
      */
     public List<RolesEntity> getRoles(UsersEntity usersEntity) {
         List<RolesEntity> rolesEntities = usersEntity.getRoles();
-        if (rolesEntities==null){
+        if (rolesEntities == null) {
             List<UserrolesEntity> userrolesEntityList = (List<UserrolesEntity>) mongoRepository.getEntitysByWhere(MongoRepository.generateUserRoleByUserIdQuery.apply(usersEntity.get_id()), UserrolesEntity.class);
-            rolesEntities =  userrolesEntityList.stream().map(userrole -> (RolesEntity) mongoRepository.getEntityById(userrole.getRole().toString(), RolesEntity.class)).collect(Collectors.toList());
+            rolesEntities = userrolesEntityList.stream().map(userrole -> (RolesEntity) mongoRepository.getEntityById(userrole.getRole().toString(), RolesEntity.class)).collect(Collectors.toList());
             return rolesEntities;
         }
-        rolesEntities = rolesEntities.stream().map(rolesEntity -> (RolesEntity)mongoRepository.getEntityById(rolesEntity.getRole(), RolesEntity.class)).collect(Collectors.toList());
+        rolesEntities = rolesEntities.stream().map(rolesEntity -> (RolesEntity) mongoRepository.getEntityById(rolesEntity.getRole(), RolesEntity.class)).collect(Collectors.toList());
         return rolesEntities;
 
 
@@ -271,7 +360,7 @@ public class UsersServiceImpl implements UsersService {
     /**
      * 获取用户权限
      *
-     * @param usersEntity 27949643
+     * @param usersEntity
      * @return
      */
     public int getPermission(UsersEntity usersEntity) {
@@ -299,5 +388,32 @@ public class UsersServiceImpl implements UsersService {
 
         return permissionCode;
     }
+    @Override
+    public Map<String, String> getUrlMap(String system) {
+        List<RoleUrlPath> roleUrlPaths = roleUrlPathRepository.findBySystemEqualsAndOptstatusNot(system, (short) 2);
+        if (roleUrlPaths == null || roleUrlPaths.size() == 0) {
+            return null;
+        }
+        Map<String, String> roleUrlMap = new HashMap<>();
+        roleUrlPaths.forEach(roleUrlPath -> {
+            roleUrlMap.put(roleUrlPath.getUrlPath(), roleUrlPath.getRoleName());
+        });
+        return roleUrlMap;
+    }
 
+    @Override
+    public void callRemoteServiceInitUrlMap(){
+        String[] initRemoteUrlsList = initRemoteUrls.split(",");
+        for(String remoteUrl:initRemoteUrlsList){
+            try {
+                remoteComponent.initRemoteSystemRoleUrl(remoteUrl);
+            } catch (IOException|HttpException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+
+    }
 }

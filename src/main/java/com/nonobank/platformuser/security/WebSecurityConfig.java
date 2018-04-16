@@ -1,23 +1,25 @@
 package com.nonobank.platformuser.security;
 
 
-import com.nonobank.platformuser.service.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 
 
 /**
@@ -31,30 +33,18 @@ import java.io.IOException;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-
     @Autowired
-    SessionRegistry sessionRegistry;
-
-//    @Autowired
-//    AppFilterSecurityInterceptor appFilterSecurityInterceptor
+    private MyAccessDecisionManager myAccessDecisionManager;
 
 
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
-                .csrf().disable()
-                .authorizeRequests()
-                .antMatchers("/user/login").permitAll()
-                .antMatchers("/user/index").hasRole("ADMIN")
-                .antMatchers("/user/getSssionId").hasRole("qa")
-                .anyRequest().authenticated()
-                .and()
-                .logout()
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
-                .and()
-                .httpBasic();
+        myAccessDecisionManager.initUrlMap();
+        http.csrf().disable().authorizeRequests()
+                .antMatchers("/**").authenticated().accessDecisionManager(myAccessDecisionManager);
+        http.exceptionHandling().accessDeniedHandler(new MyAccessDeniedHandler());
+        http.exceptionHandling().authenticationEntryPoint(new RestAuthenticationEntryPoint());
     }
 
     /**
@@ -66,30 +56,51 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         public void onAuthenticationSuccess(HttpServletRequest request,
                                             HttpServletResponse response, Authentication authentication)
                 throws ServletException, IOException {
-
             clearAuthenticationAttributes(request);
         }
     }
 
-//    @Override
-//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-//        auth.userDetailsService(urlUserService).passwordEncoder(new PasswordEncoder() {
-//
-//            @Override
-//            public String encode(CharSequence rawPassword) {
-//                return MD5Util.encode((String) rawPassword);
-//            }
-//
-//            @Override
-//            public boolean matches(CharSequence rawPassword, String encodedPassword) {
-//                return encodedPassword.equals(MD5Util.encode((String) rawPassword));
-//            }
-//        });
-//    }
 
-    @Bean
-    public SessionRegistry getSessionRegistry(){
-        SessionRegistry sessionRegistry=new SessionRegistryImpl();
-        return sessionRegistry;
+    /**
+     * 权限不通过的处理
+     */
+    public static class MyAccessDeniedHandler implements AccessDeniedHandler {
+
+        @Override
+        public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+            response.setStatus(200);
+            response.setHeader("content-type", "application/json;charset=UTF-8");
+            OutputStream os = response.getOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(os);
+            oos.writeObject("{\"code\":1008, \"msg\":\"insuffcient rights\"}");
+            oos.close();
+        }
+
+    }
+
+
+    /**
+     * 权限不通过的处理
+     */
+    public static class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+        @Override
+        public void commence(HttpServletRequest request,
+                             HttpServletResponse response,
+                             AuthenticationException authException) throws IOException {
+
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if(MyAccessDecisionManager.isAnonymous(authentication)){
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                        "Authentication Failed: No login!");
+            }else{
+                response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                        "Authentication Failed: " + authException.getMessage());
+            }
+
+
+
+        }
     }
 }

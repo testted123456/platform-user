@@ -1,4 +1,4 @@
-package com.nonobank.platformuser.dto;
+package com.nonobank.platformuser.repository;
 
 import com.nonobank.platformuser.component.MyUserException;
 import com.nonobank.platformuser.entity.mongoEntity.BaseEntity;

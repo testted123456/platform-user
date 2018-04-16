@@ -1,9 +1,14 @@
 package com.nonobank.platformuser.controller;
 
 import com.nonobank.platformuser.entity.mongoEntity.RolesEntity;
+import com.nonobank.platformuser.entity.mysqlEntity.Role;
+import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
+import com.nonobank.platformuser.entity.mysqlEntity.User;
 import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
 import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
+import com.nonobank.platformuser.repository.mysqlRepository.RoleUrlPathRepository;
+import com.nonobank.platformuser.repository.mysqlRepository.UserRepository;
 import com.nonobank.platformuser.service.UsersService;
 import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,14 +43,19 @@ public class UserInfoController {
     private UsersService usersService;
 
 
-    private void setContextValue(UsersEntity usersEntity, HttpServletRequest request) {
-        String[] roles = new String[usersEntity.getRoles().size()];
+    @Autowired
+    private RoleUrlPathRepository roleUrlPathRepository;
+
+
+    private void setContextValue(User user, HttpServletRequest request) {
+        int roleSize = user.getRoles()!=null?user.getRoles().size():0;
+        String[] roles = new String[roleSize];
         for (int i = 0; i < roles.length; i++) {
-            RolesEntity rolesEntity = usersEntity.getRoles().get(i);
-            roles[i] = PREFIX_ROLE+rolesEntity.getRolename();
+            Role role = user.getRoles().get(i);
+            roles[i] = PREFIX_ROLE+role.getRoleName();
         }
         List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(roles);
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(usersEntity.getUsername(), usersEntity.getPassword(), authorities);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword(), authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         HttpSession session = request.getSession();
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext()); // 这个非常重要，否则验证后将无法登陆
@@ -54,9 +64,9 @@ public class UserInfoController {
 
     @RequestMapping(value = "login", method = RequestMethod.POST)
     public ResponseEntity login(HttpServletRequest request, @RequestBody Map<String, String> loginMap) {
-        UsersEntity usersEntity = usersService.login(loginMap.get(KEY_USERNAME), loginMap.get(KEY_PASSWORD), request.getSession().getId());
-        setContextValue(usersEntity, request);
-        return ResponseUtil.success(usersEntity);
+        User user = usersService.login(loginMap.get(KEY_USERNAME), loginMap.get(KEY_PASSWORD));
+        setContextValue(user, request);
+        return ResponseUtil.success(user);
     }
 
 
@@ -72,9 +82,9 @@ public class UserInfoController {
 
     @RequestMapping(value = "reoladRoles", method = RequestMethod.GET)
     public ResponseEntity reoladRoles(HttpServletRequest request, @RequestParam String username) {
-        UsersEntity usersEntity = usersService.getUsersEntityByName(username);
-        setContextValue(usersEntity, request);
-        return ResponseUtil.success(usersEntity);
+        User user = usersService.getUserByName(username);
+        setContextValue(user, request);
+        return ResponseUtil.success(user);
     }
 
 
@@ -93,7 +103,13 @@ public class UserInfoController {
     @RequestMapping(value = "getSssionId", method = RequestMethod.GET)
     public String getSessionId(HttpServletRequest request) {
         return request.getSession().getId();
+    }
 
+
+    @RequestMapping(value = "getRoleUrlPathBySystem",method = RequestMethod.GET)
+    public ResponseEntity getRoleUrlPathBySystem(@RequestParam String system){
+        List<RoleUrlPath> roleUrlPaths = roleUrlPathRepository.findBySystemEqualsAndOptstatusNot(system,(short)2);
+        return ResponseUtil.success(roleUrlPaths);
     }
 
     @RequestMapping(value = "getUserBySession", method = RequestMethod.GET)
