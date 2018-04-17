@@ -13,6 +13,15 @@ import java.time.LocalDateTime;
  */
 @Entity
 public class Role {
+
+    public Role(){
+
+    }
+    public Role(Integer id,String roleName){
+        this.id = id;
+        this.roleName = roleName;
+    }
+
     @Id
     @GeneratedValue
     Integer id;

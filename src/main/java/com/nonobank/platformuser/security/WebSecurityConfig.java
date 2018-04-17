@@ -1,7 +1,12 @@
 package com.nonobank.platformuser.security;
 
 
+import com.nonobank.platformuser.component.RemoteComponent;
+import com.nonobank.platformuser.service.UsersService;
+import com.nonobank.platformuser.service.impl.UsersServiceImpl;
+import org.apache.http.HttpException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.rmi.Remote;
 
 
 /**
@@ -37,13 +43,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private MyAccessDecisionManager myAccessDecisionManager;
 
 
+    @Autowired
+    UsersService usersService;
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
         myAccessDecisionManager.initUrlMap();
         http.csrf().disable().authorizeRequests()
                 .antMatchers("/**").authenticated().accessDecisionManager(myAccessDecisionManager);
-        http.exceptionHandling().accessDeniedHandler(new MyAccessDeniedHandler());
+//        http.exceptionHandling().accessDeniedHandler(new MyAccessDeniedHandler());
         http.exceptionHandling().authenticationEntryPoint(new RestAuthenticationEntryPoint());
     }
 
@@ -61,22 +71,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
 
-    /**
-     * 权限不通过的处理
-     */
-    public static class MyAccessDeniedHandler implements AccessDeniedHandler {
-
-        @Override
-        public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-            response.setStatus(200);
-            response.setHeader("content-type", "application/json;charset=UTF-8");
-            OutputStream os = response.getOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(os);
-            oos.writeObject("{\"code\":1008, \"msg\":\"insuffcient rights\"}");
-            oos.close();
-        }
-
-    }
+//    /**
+//     * 权限不通过的处理
+//     */
+//    public static class MyAccessDeniedHandler implements AccessDeniedHandler {
+//
+//        @Override
+//        public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+//            response.setStatus(200);
+//            response.setHeader("content-type", "application/json;charset=UTF-8");
+//            OutputStream os = response.getOutputStream();
+//            ObjectOutputStream oos = new ObjectOutputStream(os);
+//            oos.writeObject("{\"code\":1008, \"msg\":\"insuffcient rights\"}");
+//            oos.close();
+//        }
+//
+//    }
 
 
     /**
@@ -91,14 +101,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if(MyAccessDecisionManager.isAnonymous(authentication)){
+            if (MyAccessDecisionManager.isAnonymous(authentication)) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
                         "Authentication Failed: No login!");
-            }else{
+            } else {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN,
                         "Authentication Failed: " + authException.getMessage());
             }
-
 
 
         }

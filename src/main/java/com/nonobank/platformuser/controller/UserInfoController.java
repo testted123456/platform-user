@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,23 +37,23 @@ public class UserInfoController {
     private final static String KEY_USERNAME = "username";
     private final static String KEY_PASSWORD = "password";
     private final static String KEY_ROLE = "role";
-    private final static String PREFIX_ROLE="ROLE_";
+    private final static String PREFIX_ROLE = "ROLE_";
 
 
     @Autowired
     private UsersService usersService;
 
 
-    @Autowired
-    private RoleUrlPathRepository roleUrlPathRepository;
+//    @Autowired
+//    private RoleUrlPathRepository roleUrlPathRepository;
 
 
     private void setContextValue(User user, HttpServletRequest request) {
-        int roleSize = user.getRoles()!=null?user.getRoles().size():0;
+        int roleSize = user.getRoles() != null ? user.getRoles().size() : 0;
         String[] roles = new String[roleSize];
         for (int i = 0; i < roles.length; i++) {
             Role role = user.getRoles().get(i);
-            roles[i] = PREFIX_ROLE+role.getRoleName();
+            roles[i] = role.getRoleName();
         }
         List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(roles);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword(), authorities);
@@ -73,7 +74,7 @@ public class UserInfoController {
     @RequestMapping(value = "logout", method = RequestMethod.GET)
     public ResponseEntity logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if (session!=null){
+        if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
@@ -100,16 +101,16 @@ public class UserInfoController {
         }
     }
 
-    @RequestMapping(value = "getSssionId", method = RequestMethod.GET)
+    @RequestMapping(value = "getUesrSessionId", method = RequestMethod.GET)
     public String getSessionId(HttpServletRequest request) {
         return request.getSession().getId();
     }
 
 
-    @RequestMapping(value = "getRoleUrlPathBySystem",method = RequestMethod.GET)
-    public ResponseEntity getRoleUrlPathBySystem(@RequestParam String system){
-        List<RoleUrlPath> roleUrlPaths = roleUrlPathRepository.findBySystemEqualsAndOptstatusNot(system,(short)2);
-        return ResponseUtil.success(roleUrlPaths);
+    @RequestMapping(value = "getRoleUrlPathBySystem", method = RequestMethod.GET)
+    public ResponseEntity getRoleUrlPathBySystem(@RequestParam String system) {
+        Map<String, String> remap = usersService.getUrlMap(system);
+        return ResponseUtil.success(remap);
     }
 
     @RequestMapping(value = "getUserBySession", method = RequestMethod.GET)

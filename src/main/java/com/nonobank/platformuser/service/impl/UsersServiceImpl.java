@@ -71,8 +71,8 @@ public class UsersServiceImpl implements UsersService {
     @Autowired
     private LdapComponent ldapComponent;
 
-    @Value("${initRemote}")
-    String initRemoteUrls;
+    @Value("${initRemotes}")
+    String initRemotes;
 
 
     private final static String INDEX_FLAG = "OU=nonobank";
@@ -210,7 +210,8 @@ public class UsersServiceImpl implements UsersService {
         }
 
 
-        User user = userRepository.findByUsernameEqualsAndOptstatusNot(username, (short) 2);
+//        User user = userRepository.findByUsernameEqualsAndOptstatusNot(username, (short) 2);
+        User user = this.getUserByName(username);
         try {
 //            密码加密
             String encryPass = SecretUtil.encryContent2ByteHexStr(password);
@@ -403,7 +404,7 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     public void callRemoteServiceInitUrlMap(){
-        String[] initRemoteUrlsList = initRemoteUrls.split(",");
+        String[] initRemoteUrlsList = initRemotes.split(",");
         for(String remoteUrl:initRemoteUrlsList){
             try {
                 remoteComponent.initRemoteSystemRoleUrl(remoteUrl);

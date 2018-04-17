@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface RoleRepository extends JpaRepository<Role,Integer> {
 
-    @Query("select id,roleName from Role where id in (select roleId from UserRoles where userId=:userId) and optstatus <> 2")
+    @Query("select new com.nonobank.platformuser.entity.mysqlEntity.Role(id,roleName) from Role where id in (select roleId from UserRoles where userId=:userId) and optstatus <> 2")
     List<Role> findRoleByUserId(@Param("userId") Integer userId);
 
     Role findRoleByRoleNameEqualsAndOptstatusNot(String roleName,Short optStatus);

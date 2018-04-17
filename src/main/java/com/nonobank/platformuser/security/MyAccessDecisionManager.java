@@ -43,10 +43,8 @@ public class MyAccessDecisionManager
 
     private static final String ANONYMOUS_USER = "anonymousUser";
 
-    private static final String ROLE_PERMITALL = "permitAll";
 
-
-    private static final String ROLE_ADMIN = "Admin";
+    private static final String ROLE_ADMIN = "admin";
 
 
     private final static String SYSTEM = "user";
