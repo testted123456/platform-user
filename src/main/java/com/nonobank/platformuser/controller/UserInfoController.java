@@ -14,6 +14,7 @@ import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
@@ -114,11 +115,13 @@ public class UserInfoController {
     }
 
     @RequestMapping(value = "getUserBySession", method = RequestMethod.GET)
-    public ResponseEntity getUserBySession(@RequestParam String sessionId) {
-        UsersEntity usersEntity = usersService.getUserBySessionId(sessionId);
-        return ResponseUtil.success(usersEntity);
-
+    public ResponseEntity getUserBySession() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userName = String.valueOf(authentication.getPrincipal());
+        User user = usersService.getUserByName(userName);
+        return ResponseUtil.success(user);
     }
+
 
 
     @RequestMapping(value = "index", method = RequestMethod.GET)
