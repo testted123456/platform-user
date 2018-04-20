@@ -1,13 +1,48 @@
 package com.nonobank.platformuser.service.impl;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import org.apache.http.HttpException;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Service;
+
+import com.alibaba.fastjson.JSONObject;
 import com.nonobank.platformuser.component.LdapComponent;
 import com.nonobank.platformuser.component.MyUserException;
 import com.nonobank.platformuser.component.RemoteComponent;
 import com.nonobank.platformuser.entity.ldapEntity.LdapUserEntity;
-import com.nonobank.platformuser.entity.mongoEntity.*;
+import com.nonobank.platformuser.entity.mongoEntity.PermissionsEntity;
+import com.nonobank.platformuser.entity.mongoEntity.RolepermissionsEntity;
+import com.nonobank.platformuser.entity.mongoEntity.RolesEntity;
+import com.nonobank.platformuser.entity.mongoEntity.SessionsEntity;
+import com.nonobank.platformuser.entity.mongoEntity.UserrolesEntity;
+import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
 import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
 import com.nonobank.platformuser.entity.mysqlEntity.User;
+import com.nonobank.platformuser.entity.mysqlEntity.UserFront;
 import com.nonobank.platformuser.entity.mysqlEntity.UserRoles;
 import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 import com.nonobank.platformuser.repository.MongoRepository;
@@ -18,28 +53,6 @@ import com.nonobank.platformuser.repository.mysqlRepository.UserRolesRepository;
 import com.nonobank.platformuser.service.UsersService;
 import com.nonobank.platformuser.utils.CharsUtil;
 import com.nonobank.platformuser.utils.SecretUtil;
-import org.apache.http.HttpException;
-import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.stereotype.Service;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by tangrubei on 2018/3/1.
@@ -417,4 +430,107 @@ public class UsersServiceImpl implements UsersService {
 
 
     }
+
+
+	@Override
+	public List<Role> getAllRoles() {
+		return	roleRepository.findAll();
+	}
+
+
+	@Override
+	public Role addRole(Role role) {
+		Integer id = role.getId();
+		String name = role.getRoleName();
+		Role r = getRoleByName(name);
+		
+		if(null == r || r.getId().equals(id)){
+			role.setOptstatus((short)0);
+			role = roleRepository.save(role);
+		}else{
+			throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "角色名称已存在！");
+		}
+		
+		return role;
+	}
+
+
+	@Override
+	public void delRole(Role role) {
+		roleRepository.delete(role.getId());
+	}
+
+
+	@Override
+	public Role getRoleByName(String name) {
+		return roleRepository.findByRoleName(name);
+	}
+
+
+	@Override
+	public List<User> getAllUsers() {
+		List<User> users = userRepository.findAll();
+		
+		users.forEach(x->{
+			
+			List<Role> roles = roleRepository.findRoleByUserId(x.getId());
+			x.setRoles(roles);
+		});
+		
+		return users;
+	}
+
+
+	@Override
+	public List<User> searchByname(String name) {
+		return userRepository.findByUsernameLike(name);
+	}
+	
+	public List<Map<String, Object>> findAllUsers(){
+		List<Map<String, Object>> listOfUsers = new ArrayList<>();
+		List<Object[]> list = userRepository.findAllUsers();
+		
+		list.forEach(x->{
+			Map<String, Object> map = new HashMap<>();
+			map.put("id", x[0]);
+			map.put("username", x[1]);
+			map.put("nickname", x[2]);
+			List<Object> roles = new ArrayList<>();
+			roles.add(x[3]);
+			map.put("roles", roles);
+			listOfUsers.add(map);
+		});
+		
+		return listOfUsers;
+	}
+
+
+	@Override
+	public List<JSONObject> getAllPrivileges() {
+		List<RoleUrlPath> roleUrlPathes = roleUrlPathRepository.findAll();
+		
+		Map<String, Map<String, List<RoleUrlPath>>> maps =
+		roleUrlPathes.stream().collect(Collectors.groupingBy(RoleUrlPath::getSystem, Collectors.groupingBy(RoleUrlPath::getUrlPath)));
+		
+		List<JSONObject> list = new ArrayList<>();
+		
+		maps.forEach((k,v)->{
+			final String system = k;
+			
+			v.forEach((k1,v1)->{
+				String url = k1;
+				JSONObject jsonObj = new JSONObject();
+				jsonObj.put("system", system);
+				jsonObj.put("url", url);
+				 List<Integer> roles = v1.stream().map(x->{
+					return x.getRoleId();
+				}).collect(Collectors.toList());
+				jsonObj.put("roles", roles);
+				list.add(jsonObj);
+			});
+		});
+		
+		return list;
+	}
+
 }

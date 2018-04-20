@@ -1,10 +1,13 @@
 package com.nonobank.platformuser.service;
 
-import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
-import com.nonobank.platformuser.entity.mysqlEntity.User;
-import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
-
+import java.util.List;
 import java.util.Map;
+
+import com.alibaba.fastjson.JSONObject;
+import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
+import com.nonobank.platformuser.entity.mysqlEntity.Role;
+import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
+import com.nonobank.platformuser.entity.mysqlEntity.User;
 
 /**
  * Created by tangrubei on 2018/3/1.
@@ -22,8 +25,14 @@ public interface UsersService {
     public UsersEntity getUsersEntityByName(String userName);
 
     public User getUserByName(String userName);
-
-
+    
+    public List<Role> getAllRoles();
+    
+    public Role addRole(Role role);
+    
+    public void delRole(Role role);
+    
+    public Role getRoleByName(String name);
 
     public UsersEntity getUserBySessionId(String sessionId);
 
@@ -31,4 +40,13 @@ public interface UsersService {
 
 
     public void callRemoteServiceInitUrlMap();
+    
+    public List<User> getAllUsers();
+    
+    public List<User> searchByname(String name);
+    
+    public List<Map<String, Object>> findAllUsers();
+    
+    public List<JSONObject> getAllPrivileges();
+
 }

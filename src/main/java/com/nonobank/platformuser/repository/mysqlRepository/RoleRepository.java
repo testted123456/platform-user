@@ -14,5 +14,7 @@ public interface RoleRepository extends JpaRepository<Role,Integer> {
     List<Role> findRoleByUserId(@Param("userId") Integer userId);
 
     Role findRoleByRoleNameEqualsAndOptstatusNot(String roleName,Short optStatus);
+    
+    Role findByRoleName(String name);
 
 }
