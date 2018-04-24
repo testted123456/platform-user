@@ -90,6 +90,10 @@ public class MyAccessDecisionManager
     public void decide(Authentication authentication, Object object,
                        Collection<ConfigAttribute> configAttributes)
             throws AccessDeniedException, InsufficientAuthenticationException {
+    	
+    	if(((FilterInvocation) object).getRequest().getMethod().equals("OPTIONS")){
+        	return;
+        }
 
 //        判断ip是否需要忽略
         String ip = IpAdrressUtil.getIpAdrress(((FilterInvocation) object).getRequest());

@@ -1,12 +1,9 @@
 package com.nonobank.platformuser.repository.mysqlRepository;
 
 import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
 import com.nonobank.platformuser.entity.mysqlEntity.User;
-import com.nonobank.platformuser.entity.mysqlEntity.UserFront;
 
 public interface UserRepository extends JpaRepository<User,Integer> {
     User findByIdEquals(Integer id);

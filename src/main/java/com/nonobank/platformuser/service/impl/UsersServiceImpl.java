@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
 import org.apache.http.HttpException;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-
 import com.alibaba.fastjson.JSONObject;
 import com.nonobank.platformuser.component.LdapComponent;
 import com.nonobank.platformuser.component.MyUserException;
@@ -42,7 +40,6 @@ import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
 import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
 import com.nonobank.platformuser.entity.mysqlEntity.User;
-import com.nonobank.platformuser.entity.mysqlEntity.UserFront;
 import com.nonobank.platformuser.entity.mysqlEntity.UserRoles;
 import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 import com.nonobank.platformuser.repository.MongoRepository;
