@@ -12,4 +12,6 @@ import java.util.List;
 public interface RoleUrlPathRepository extends JpaRepository<RoleUrlPath, Integer> {
 
     List<RoleUrlPath> findBySystemEqualsAndOptstatusNot(String system,Short optstatus);
+    
+    List<RoleUrlPath> findBySystemAndUrlPath(String system, String urlPath);
 }

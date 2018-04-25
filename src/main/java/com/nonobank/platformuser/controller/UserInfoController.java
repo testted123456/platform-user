@@ -1,5 +1,6 @@
 package com.nonobank.platformuser.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.nonobank.platformuser.entity.mongoEntity.RolesEntity;
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
 import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
@@ -23,6 +24,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -140,6 +144,47 @@ public class UserInfoController {
             return ResponseUtil.error(ResponseCode.UNKOWN_ERROR.getCode(), "权限赋值失败");
         }
     }
+    
+    @GetMapping(value="getAllRoles")
+    @ResponseBody
+    public ResponseEntity getAllRoles(){
+    	return ResponseUtil.success(usersService.getAllRoles());
+    }
 
+    @PostMapping(value="addRole")
+    @ResponseBody
+    public ResponseEntity addRole(@RequestBody Role role){
+    		role = usersService.addRole(role);
+        	return ResponseUtil.success(role);
+    }
 
+    @PostMapping(value="delRole")
+    @ResponseBody
+    public ResponseEntity delRole(@RequestBody Role role){
+    	usersService.delRole(role);
+    	return ResponseUtil.success();
+    }
+    
+    @GetMapping(value="getAllUsers")
+    @ResponseBody
+    public ResponseEntity getAllUsers(){
+    	List<Map<String, Object>> users = 
+    			usersService.findAllUsers();
+//    			usersService.getAllUsers();
+    	return ResponseUtil.success(users);
+    }
+    
+    @GetMapping(value="searchByName")
+    @ResponseBody
+    public ResponseEntity searchByName(@RequestParam String name){
+    	List<User> users = usersService.searchByname("%" + name + "%");
+    	return ResponseUtil.success(users);
+    }
+    
+    @GetMapping(value="getAllPrivileges")
+    @ResponseBody
+	public ResponseEntity getAllPrivileges() {
+    	return ResponseUtil.success(usersService.getAllPrivileges());
+	}
+    
 }
