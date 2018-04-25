@@ -1,33 +1,22 @@
 package com.nonobank.platformuser.controller;
 
-import com.alibaba.fastjson.JSONObject;
-import com.nonobank.platformuser.entity.mongoEntity.RolesEntity;
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
-import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
 import com.nonobank.platformuser.entity.mysqlEntity.User;
 import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
-import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
 import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
-import com.nonobank.platformuser.repository.mysqlRepository.RoleUrlPathRepository;
-import com.nonobank.platformuser.repository.mysqlRepository.UserRepository;
-import com.nonobank.platformuser.service.UsersService;
 import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
+import com.nonobank.platformuser.service.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
