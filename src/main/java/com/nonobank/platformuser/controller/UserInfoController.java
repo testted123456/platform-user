@@ -128,6 +128,7 @@ public class UserInfoController {
         String role = grantMap.get(KEY_ROLE);
         boolean f = usersService.grantRoleToUser(username, role);
         if (f) {
+            usersService.callRemoteServiceInitUrlMap();
             return ResponseUtil.success();
         } else {
             return ResponseUtil.error(ResponseCode.UNKOWN_ERROR.getCode(), "权限赋值失败");

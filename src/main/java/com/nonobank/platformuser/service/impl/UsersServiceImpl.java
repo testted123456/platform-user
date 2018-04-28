@@ -166,6 +166,7 @@ public class UsersServiceImpl implements UsersService {
      */
     @Override
     public UsersEntity login(String username, String password, String sessionId) {
+
 //        连接ldap校验用户名密码是否正确
         boolean result = ldapComponent.loginCheck(username, password);
         if (!result) {
@@ -194,9 +195,6 @@ public class UsersServiceImpl implements UsersService {
             throw new MyUserException(ResponseCode.UNKOWN_ERROR.getCode(), "登陆异常，数据加密出现异常");
         }
 
-//        int permission = getPermission(usersEntity);
-//        usersEntity.setPermission(permission);
-//        更新session 并返回权限
         List<RolesEntity> rolesEntities = this.getRoles(usersEntity);
         usersEntity.setRoles(rolesEntities);
         SessionsEntity sessionEntity = new SessionsEntity();
@@ -212,14 +210,32 @@ public class UsersServiceImpl implements UsersService {
         return usersEntity;
     }
 
+
+    private boolean checkAdmin(String username, String password){
+        User user = this.getUserByName(username);
+        if(user.getPassword().equals(password)){
+            return true;
+        }
+        return false;
+
+    }
+
+
     @Override
     public User login(String username, String password) {
+        if(username.toLowerCase().equals("admin")){
+            User user = this.getUserByName(username);
+            if(user.getPassword().equals(password)){
+                return user;
+            }else{
+                throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "用户名或密码错误");
+            }
+        }
+
         boolean result = ldapComponent.loginCheck(username, password);
         if (!result) {
             throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "用户名或密码错误");
         }
-
-
 //        User user = userRepository.findByUsernameEqualsAndOptstatusNot(username, (short) 2);
         User user = this.getUserByName(username);
         try {

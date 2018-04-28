@@ -31,4 +31,6 @@ public class RemoteComponent {
         String repstr = HttpClient.getResBody(closeableHttpResponse);
         return repstr;
     }
+
+
 }

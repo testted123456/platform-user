@@ -14,13 +14,13 @@ import javax.annotation.PostConstruct;
 @Component
 public class AfterRunner {
 
-    @Autowired
-    UsersService usersService;
+//    @Autowired
+//    UsersService usersService;
 
 
-    @EventListener(ApplicationReadyEvent.class)
+//    @EventListener(ApplicationReadyEvent.class)
     public void init(){
-        usersService.callRemoteServiceInitUrlMap();
+//        usersService.callRemoteServiceInitUrlMap();
         // start your monitoring in here
     }
 }
