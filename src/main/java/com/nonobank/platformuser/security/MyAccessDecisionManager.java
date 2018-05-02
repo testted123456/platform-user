@@ -111,13 +111,13 @@ public class MyAccessDecisionManager
         }
 
 //      匿名用户即为非法访问
-        if (isAnonymous(authentication)) {
-            throw new AccessDeniedException(NO_LOGIN);
-        }
+//        if (isAnonymous(authentication)) {
+//            throw new AccessDeniedException(NO_LOGIN);
+//        }
 
 //      获取urlmap
         if (urlMap == null || urlMap.keySet().size() == 0) {
-            throw new AccessDeniedException("");
+            return ;
         }
 
 //        判断是否有相应的角色
