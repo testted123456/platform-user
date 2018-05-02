@@ -244,6 +244,8 @@ public class UsersServiceImpl implements UsersService {
 //            首次登陆
             if (user == null || user.getId() == null) {
                 user = createNewUserObj(username, password);
+                LdapUserEntity ldapUserEntity = ldapComponent.getUserInfo(username);
+                user.setNickname(ldapUserEntity.getDisplayName());
                 userRepository.save(user);
             }
 //            非首次登陆 判断密码是否更新
