@@ -20,11 +20,16 @@ public class RepExceptionHandler {
     @ResponseBody
     public ResponseEntity handle(Exception e){
         if( e instanceof MyUserException){
+            e.printStackTrace();
+            logger.error(e.toString());
             MyUserException userException = (MyUserException)e;
             return ResponseUtil.error(userException.getErrorCode(), userException.getErrorMessage());
+
+
         }else{
             logger.error("发生未知异常");
             e.printStackTrace();
+            logger.error(e.getMessage());
             return ResponseUtil.error(ResponseCode.UNKOWN_ERROR.getCode(), e.getClass().getName());
         }
     }
