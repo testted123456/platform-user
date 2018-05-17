@@ -338,9 +338,14 @@ public class UsersServiceImpl implements UsersService {
          **/
         User user = userRepository.findByUsernameEqualsAndOptstatusNot(userName, (short) 2);
         Role role = roleRepository.findRoleByRoleNameEqualsAndOptstatusNot(roleName, (short) 2);
-        UserRoles userRoles = new UserRoles();
+        UserRoles userRoles = userRolesRepository.findByUserId(user.getId());
+        if(null == userRoles){
+        	userRoles = new UserRoles();
+        }
         userRoles.setUserId(user.getId());
         userRoles.setRoleId(role.getId());
+        userRoles.setOptstatus((short)0);
+        
         userRolesRepository.save(userRoles);
         return true;
     }
@@ -497,10 +502,26 @@ public class UsersServiceImpl implements UsersService {
 
 
 	@Override
-	public List<User> searchByname(String name) {
-		return userRepository.findByUsernameLike(name);
+	public List<Map<String, Object>> searchByname(String name) {
+		List<Map<String, Object>> listOfUsers = new ArrayList<>();
+		List<Object[]> list = userRepository.findByUsernameLike(name);
+		
+		list.forEach(x->{
+			Map<String, Object> map = new HashMap<>();
+			map.put("id", x[0]);
+			map.put("username", x[1]);
+			map.put("nickname", x[2]);
+			map.put("role", x[4]);
+//			List<Object> roles = new ArrayList<>();
+//			roles.add(x[3]);
+//			map.put("roles", roles);
+			listOfUsers.add(map);
+		});
+		
+		return listOfUsers;
 	}
 	
+	@Override
 	public List<Map<String, Object>> findAllUsers(){
 		List<Map<String, Object>> listOfUsers = new ArrayList<>();
 		List<Object[]> list = userRepository.findAllUsers();
@@ -510,9 +531,10 @@ public class UsersServiceImpl implements UsersService {
 			map.put("id", x[0]);
 			map.put("username", x[1]);
 			map.put("nickname", x[2]);
-			List<Object> roles = new ArrayList<>();
-			roles.add(x[3]);
-			map.put("roles", roles);
+			map.put("role", x[4]);
+//			List<Object> roles = new ArrayList<>();
+//			roles.add(x[3]);
+//			map.put("roles", roles);
 			listOfUsers.add(map);
 		});
 		

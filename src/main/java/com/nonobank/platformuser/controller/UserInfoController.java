@@ -167,7 +167,7 @@ public class UserInfoController {
     @GetMapping(value="searchByName")
     @ResponseBody
     public ResponseEntity searchByName(@RequestParam String name){
-    	List<User> users = usersService.searchByname("%" + name + "%");
+    	List<Map<String, Object>> users = usersService.searchByname(name);
     	return ResponseUtil.success(users);
     }
     

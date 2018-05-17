@@ -43,7 +43,7 @@ public interface UsersService {
     
     public List<User> getAllUsers();
     
-    public List<User> searchByname(String name);
+    public List<Map<String, Object>> searchByname(String name);
     
     public List<Map<String, Object>> findAllUsers();
     
