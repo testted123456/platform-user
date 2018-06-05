@@ -177,4 +177,11 @@ public class UserInfoController {
     	return ResponseUtil.success(usersService.getAllPrivileges());
 	}
     
+    @GetMapping(value="getUsersByRole")
+    @ResponseBody
+    public ResponseEntity getUsersByRole(@RequestParam String rolename){
+    	List<Map<String, Object>> listOfUsers = usersService.findUsersByRoleName(rolename);
+    	return ResponseUtil.success(listOfUsers);
+    }
+    
 }

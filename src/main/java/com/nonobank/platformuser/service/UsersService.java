@@ -47,6 +47,8 @@ public interface UsersService {
     
     public List<Map<String, Object>> findAllUsers();
     
+    public List<Map<String, Object>>  findUsersByRoleName(String rolename);
+    
     public List<JSONObject> getAllPrivileges();
 
 }

@@ -21,4 +21,6 @@ public interface UserRepository extends JpaRepository<User,Integer> {
     @Query(value="select u.id, u.username, u.nickname,  t.role_id, t.role_name from user u left join (select ur.user_id, ur.role_id, r.role_name from user_roles ur, role r where ur.role_id=r.id ) t on u.id=t.user_id", nativeQuery = true)
     List<Object[]> findAllUsers();
 
+    @Query(value="select u.email, u.nickname from user u, user_roles ur, role r where r.role_name=:role_name and u.id=ur.user_id and ur.role_id=r.id", nativeQuery = true)
+    List<Object[]> findUsersByRoleName(@Param("role_name") String role_name);
 }

@@ -570,4 +570,20 @@ public class UsersServiceImpl implements UsersService {
 		return list;
 	}
 
+
+	@Override
+	public List<Map<String, Object>> findUsersByRoleName(String rolename) {
+		List<Map<String, Object>> listOfUsers = new ArrayList<>();
+		List<Object[]> list = userRepository.findUsersByRoleName(rolename);
+		
+		list.forEach(x->{
+			Map<String, Object> map = new HashMap<>();
+			map.put("email", x[0]);
+			map.put("nickname", x[1]);
+			listOfUsers.add(map);
+		});
+		
+		return listOfUsers;
+	}
+
 }
