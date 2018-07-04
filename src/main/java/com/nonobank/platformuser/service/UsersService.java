@@ -4,9 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSONObject;
-import com.nonobank.platformuser.entity.mongoEntity.UsersEntity;
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
-import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
 import com.nonobank.platformuser.entity.mysqlEntity.User;
 
 /**
@@ -14,15 +12,17 @@ import com.nonobank.platformuser.entity.mysqlEntity.User;
  */
 public interface UsersService {
 
-    public UsersEntity login(String username, String password,String sessionId);
+//    public User login(String username, String password,String sessionId);
+	
+	public User resetPasswd(String userName, String initPasswd, String newPasswd);
 
     public User login(String username, String password);
 
-    public boolean checkSession(String sessionId);
+//    public boolean checkSession(String sessionId);
 
     public boolean grantRoleToUser(String userName,String role);
 
-    public UsersEntity getUsersEntityByName(String userName);
+//    public User getUsersEntityByName(String userName);
 
     public User getUserByName(String userName);
     
@@ -34,10 +34,9 @@ public interface UsersService {
     
     public Role getRoleByName(String name);
 
-    public UsersEntity getUserBySessionId(String sessionId);
+//    public User getUserBySessionId(String sessionId);
 
     public Map<String,String> getUrlMap(String system);
-
 
     public void callRemoteServiceInitUrlMap();
     

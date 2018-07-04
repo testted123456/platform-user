@@ -26,4 +26,12 @@ public class ResponseUtil {
 		responseEntity.setMsg(msg);
 		return responseEntity;
 	}
+	
+	public static ResponseEntity error(int code, String msg, Object object) {
+		ResponseEntity responseEntity = new ResponseEntity();
+		responseEntity.setCode(code);
+		responseEntity.setMsg(msg);
+		responseEntity.setData(object);
+		return responseEntity;
+	}
 }

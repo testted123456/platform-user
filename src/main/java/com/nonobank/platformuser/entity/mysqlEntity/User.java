@@ -28,7 +28,7 @@ public class User {
 
     @Column(nullable = true, columnDefinition = "varchar(300) COMMENT '邮箱'")
     String email;
-
+    
     @Column(nullable = false, columnDefinition = "varchar(300) COMMENT '密码'")
     String password;
 
@@ -40,10 +40,12 @@ public class User {
 
     @Column(nullable = true, columnDefinition = "varchar(300) COMMENT '修改人'")
     String updatedBy;
+    
+    @Column(nullable = false, columnDefinition = "bit(1) COMMENT '初始密码是否被修改过'")
+    Boolean passwodChanged;
 
     @Column(nullable = false, columnDefinition = "smallint(1) COMMENT '0:正常，1:已更新，2:已删除'")
     Short optstatus;
-
 
     @Transient
     List<Role> roles;
@@ -53,16 +55,10 @@ public class User {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     LocalDateTime createdTime;
 
-
-
     @Column(columnDefinition = " datetime")
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     LocalDateTime updatedTime;
-
-
-
-
 
     public Integer getId() {
         return id;
@@ -144,7 +140,15 @@ public class User {
         this.updatedTime = updatedTime;
     }
 
-    public Short getOptstatus() {
+	public Boolean getPasswodChanged() {
+		return passwodChanged;
+	}
+
+	public void setPasswodChanged(Boolean passwodChanged) {
+		this.passwodChanged = passwodChanged;
+	}
+
+	public Short getOptstatus() {
         return optstatus;
     }
 

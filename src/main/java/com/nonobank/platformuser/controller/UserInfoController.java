@@ -6,6 +6,8 @@ import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
 import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
 import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
 import com.nonobank.platformuser.service.UsersService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,7 +16,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.List;
@@ -27,12 +28,13 @@ import java.util.Map;
 @EnableAutoConfiguration
 @RequestMapping(value = "/user")
 public class UserInfoController {
+	
+	public static Logger logger = LoggerFactory.getLogger(UserInfoController.class);
 
     private final static String KEY_USERNAME = "username";
     private final static String KEY_PASSWORD = "password";
     private final static String KEY_ROLE = "role";
     private final static String PREFIX_ROLE = "ROLE_";
-
 
     @Autowired
     private UsersService usersService;
@@ -56,14 +58,27 @@ public class UserInfoController {
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext()); // 这个非常重要，否则验证后将无法登陆
     }
 
-
+    @RequestMapping(value = "resetPasswd", method = RequestMethod.POST)
+    public ResponseEntity resetPasswd( @RequestBody Map<String, String> map) {
+    	String userName = map.get("userName");
+    	String initPasswd = map.get("initPasswd");
+    	String newPasswd = map.get("newPasswd");
+    	User user = usersService.resetPasswd(userName, initPasswd, newPasswd);
+    	return ResponseUtil.success(user);
+    }
+    
     @RequestMapping(value = "login", method = RequestMethod.POST)
     public ResponseEntity login(HttpServletRequest request, @RequestBody Map<String, String> loginMap) {
         User user = usersService.login(loginMap.get(KEY_USERNAME), loginMap.get(KEY_PASSWORD));
         setContextValue(user, request);
-        return ResponseUtil.success(user);
+        
+        if(user.getPasswodChanged().equals(false)) {
+        	return ResponseUtil.error(ResponseCode.INITPASSWD_ERROR.getCode(), ResponseCode.INITPASSWD_ERROR.getMsg(), user);
+        }else {
+        	 return ResponseUtil.success(user);
+        }
+       
     }
-
 
     @RequestMapping(value = "logout", method = RequestMethod.GET)
     public ResponseEntity logout(HttpServletRequest request) {
@@ -83,7 +98,7 @@ public class UserInfoController {
     }
 
 
-    @RequestMapping(value = "checkSession", method = RequestMethod.GET)
+    /*@RequestMapping(value = "checkSession", method = RequestMethod.GET)
     public ResponseEntity checkSession(HttpServletRequest request) {
 
         String sessionId = request.getSession().getId();
@@ -93,7 +108,7 @@ public class UserInfoController {
         } else {
             return ResponseUtil.error(ResponseCode.VALIDATION_ERROR.getCode(), "session 失效");
         }
-    }
+    }*/
 
     @RequestMapping(value = "getUesrSessionId", method = RequestMethod.GET)
     public String getSessionId(HttpServletRequest request) {
@@ -111,7 +126,12 @@ public class UserInfoController {
     public ResponseEntity getUserBySession() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = String.valueOf(authentication.getPrincipal());
+        logger.info("用户：{}", userName);
         User user = usersService.getUserByName(userName);
+        
+        if(null == user) {
+        	return ResponseUtil.error(ResponseCode.DB_ERROR.getCode(), "用户不存在！");
+        }
         return ResponseUtil.success(user);
     }
 

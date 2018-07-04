@@ -7,7 +7,8 @@ public enum ResponseCode {
 	EMPTY_ERROR(10003, "对象为空"), 
 	DB_ERROR(10004, "数据库操作错误"), 
 	EXCEPTION_ERROR(10005, "发生异常"),
-	HTTP_ERROR(1006, "HTTP请求异常")
+	HTTP_ERROR(1006, "HTTP请求异常"),
+	INITPASSWD_ERROR(10007, "请修改初始化密码")
 	;
 
 	private int code;
