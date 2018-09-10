@@ -1,0 +1,8 @@
+spring:
+ application:
+  name: platform-user
+ cloud: 
+  config:
+   label: master
+   profile: dev
+   uri: http://192.168.18.140:9500/

@@ -1,0 +1,39 @@
+server:
+ port: 9090
+spring:
+ session:
+  store-type: redis
+ redis:
+  host: 192.168.1.121
+  port: 6379
+  timeout: 259200
+ datasource:
+  url: jdbc:mysql://192.168.1.121:3306/testingplatform?autoReconnect=true&useSSL=false&characterEncoding=utf-8
+  username: root
+  password: Imobpay123456!
+  driver-class-name: com.mysql.jdbc.Driver
+ jpa:
+  hibernate:
+   ddl-auto: update
+  show-sql: true
+ rabbitmq:
+    host: 192.168.1.121
+    port: 5672
+    username: rabbitadmin
+    password: 123456
+system: user
+ignore:
+ urlPath: /login,/addRole
+ ip: 127.0.0.1
+
+initRemotes: http://127.0.0.1:9090/group/initRoleUrlMap,http://127.0.0.1:9090/inter/api/initUrlRole,http://127.0.0.1:9090case/testCase/initUrlRole,
+#ldap.url=ldap://192.168.1.200:389/
+#spring.ldap.urls=
+#spring.ldap.base=
+eureka:
+ client:
+  serviceUrl:
+   defaultZone: http://192.168.18.140:9400/eureka/
+management:
+  security:
+    enabled: false
