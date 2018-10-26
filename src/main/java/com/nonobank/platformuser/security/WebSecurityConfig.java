@@ -1,6 +1,5 @@
 package com.nonobank.platformuser.security;
 
-
 import com.nonobank.platformuser.component.RemoteComponent;
 import com.nonobank.platformuser.service.UsersService;
 import com.nonobank.platformuser.service.impl.UsersServiceImpl;
@@ -18,7 +17,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,7 +38,7 @@ import java.rmi.Remote;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private MyAccessDecisionManager myAccessDecisionManager;
+    private UserAccessDecisionManager userAccessDecisionManager;
 
 
     @Autowired
@@ -49,12 +47,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+    	http.csrf().disable();
 
-        myAccessDecisionManager.initUrlMap();
+       /* myAccessDecisionManager.initUrlMap();
         http.csrf().disable().authorizeRequests()
                 .antMatchers("/**").authenticated().accessDecisionManager(myAccessDecisionManager);
-//        http.exceptionHandling().accessDeniedHandler(new MyAccessDeniedHandler());
-        http.exceptionHandling().authenticationEntryPoint(new RestAuthenticationEntryPoint());
+        http.exceptionHandling().authenticationEntryPoint(new RestAuthenticationEntryPoint());*/
     }
 
     /**
@@ -89,6 +87,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //    }
 
 
+    
     /**
      * 权限不通过的处理
      */
@@ -99,17 +98,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                              AuthenticationException authException) throws IOException {
 
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            /*Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (MyAccessDecisionManager.isAnonymous(authentication)) {
+            if (UserAccessDecisionManager.isAnonymous(authentication)) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
                         "Authentication Failed: No login!");
             } else {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN,
                         "Authentication Failed: " + authException.getMessage());
-            }
-
-
+            }*/
         }
     }
 }

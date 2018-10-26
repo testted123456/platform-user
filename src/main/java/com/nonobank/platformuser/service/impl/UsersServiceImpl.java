@@ -313,7 +313,7 @@ public class UsersServiceImpl implements UsersService {
         });
         return roleUrlMap;
     }
-
+    
     @Override
     public void callRemoteServiceInitUrlMap(){
         String[] initRemoteUrlsList = initRemotes.split(",");

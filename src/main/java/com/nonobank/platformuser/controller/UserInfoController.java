@@ -27,6 +27,7 @@ import java.util.Map;
 @RestController
 @EnableAutoConfiguration
 @RequestMapping(value = "/user")
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class UserInfoController {
 	
 	public static Logger logger = LoggerFactory.getLogger(UserInfoController.class);
@@ -38,11 +39,6 @@ public class UserInfoController {
 
     @Autowired
     private UsersService usersService;
-
-
-//    @Autowired
-//    private RoleUrlPathRepository roleUrlPathRepository;
-
 
     private void setContextValue(User user, HttpServletRequest request) {
         int roleSize = user.getRoles() != null ? user.getRoles().size() : 0;
@@ -97,7 +93,6 @@ public class UserInfoController {
         return ResponseUtil.success(user);
     }
 
-
     /*@RequestMapping(value = "checkSession", method = RequestMethod.GET)
     public ResponseEntity checkSession(HttpServletRequest request) {
 
@@ -134,8 +129,6 @@ public class UserInfoController {
         }
         return ResponseUtil.success(user);
     }
-
-
 
     @RequestMapping(value = "index", method = RequestMethod.GET)
     public String index(@RequestParam String word) {
