@@ -13,5 +13,7 @@ public interface RoleUrlPathRepository extends JpaRepository<RoleUrlPath, Intege
 
     List<RoleUrlPath> findBySystemEqualsAndOptstatusNot(String system,Short optstatus);
     
+    RoleUrlPath findBySystemAndUrlPathAndRoleIdAndOptstatusNot(String system,String urlPaht, Integer roleId, Short optstatus);
+    
     List<RoleUrlPath> findBySystemAndUrlPath(String system, String urlPath);
 }

@@ -16,5 +16,7 @@ public interface RoleRepository extends JpaRepository<Role,Integer> {
     Role findRoleByRoleNameEqualsAndOptstatusNot(String roleName,Short optStatus);
     
     Role findByRoleName(String name);
+    
+    Role findById(Integer id);
 
 }

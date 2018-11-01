@@ -40,12 +40,23 @@ public class UrlRoleCache {
 		this.urlMap = urlMap;
 	}
 	
+	//清除redis中url权限
+	public void removeUrlMap(){
+		redisUtil.remove("user");
+		redisUtil.remove("inter");
+		redisUtil.remove("case");
+		redisUtil.remove("group");
+	}
+	
 	/**
 	 * url权限保存到redis
 	 */
 	@EventListener(ApplicationReadyEvent.class)
     public void initUrlMap() {
 		logger.info("开始设置url权限...");
+		
+		//先清除redis
+		removeUrlMap();
 		
 		urlMap = new HashMap<>();
 		Map<String, String> userUrlMap = usersService.getUrlMap("user");

@@ -60,7 +60,7 @@ public class RedisUtil {
     }
     
     public Map<String, String> getHashObject(String key){
-    	Map<String, String> map = new HashMap();
+    	Map<String, String> map = new HashMap<>();
     	Set<Object> set = redisTemplate.opsForHash().keys(key);
     	set.forEach(x->{
     		String hk = String.valueOf(x);

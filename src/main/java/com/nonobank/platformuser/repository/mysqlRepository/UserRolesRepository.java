@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserRolesRepository extends JpaRepository<UserRoles, Integer> {
 	
 	UserRoles findByUserId(Integer id);
+	
+	UserRoles findByUserIdAndAndOptstatusNot(Integer id, Short optStatus);
 }

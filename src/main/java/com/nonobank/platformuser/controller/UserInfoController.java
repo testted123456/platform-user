@@ -1,11 +1,12 @@
 package com.nonobank.platformuser.controller;
 
-import com.nonobank.platformuser.entity.mysqlEntity.Role;
-import com.nonobank.platformuser.entity.mysqlEntity.User;
-import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
-import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
-import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
-import com.nonobank.platformuser.service.UsersService;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +16,26 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.nonobank.platformuser.component.UrlRoleCache;
+import com.nonobank.platformuser.entity.mysqlEntity.Role;
+import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
+import com.nonobank.platformuser.entity.mysqlEntity.User;
+import com.nonobank.platformuser.entity.responseEntity.ResponseCode;
+import com.nonobank.platformuser.entity.responseEntity.ResponseEntity;
+import com.nonobank.platformuser.entity.responseEntity.ResponseUtil;
+import com.nonobank.platformuser.service.UsersService;
 
 /**
  * Created by tangrubei on 2018/2/24.
@@ -33,12 +49,16 @@ public class UserInfoController {
 	public static Logger logger = LoggerFactory.getLogger(UserInfoController.class);
 
     private final static String KEY_USERNAME = "username";
+    private final static String KEY_NICKNAME = "nickname";
     private final static String KEY_PASSWORD = "password";
     private final static String KEY_ROLE = "role";
     private final static String PREFIX_ROLE = "ROLE_";
 
     @Autowired
     private UsersService usersService;
+    
+    @Autowired
+    private UrlRoleCache urlRoleCache;
 
     private void setContextValue(User user, HttpServletRequest request) {
         int roleSize = user.getRoles() != null ? user.getRoles().size() : 0;
@@ -135,17 +155,59 @@ public class UserInfoController {
         return "hello " + word;
     }
 
+    /**
+     * 给用户添加角色
+     * @param grantMap
+     * @return
+     */
     @RequestMapping(value = "grantRole", method = RequestMethod.POST)
     public ResponseEntity grantRoleToUser(@RequestBody Map<String, String> grantMap) {
         String username = grantMap.get(KEY_USERNAME);
         String role = grantMap.get(KEY_ROLE);
+        String nickname = grantMap.get(KEY_NICKNAME);
+        
+        User user = usersService.createNewUser(username, nickname, "e10adc3949ba59abbe56e057f20f883e");
+        		
         boolean f = usersService.grantRoleToUser(username, role);
+        
+        return ResponseUtil.success();
+        /*
         if (f) {
             usersService.callRemoteServiceInitUrlMap();
             return ResponseUtil.success();
         } else {
             return ResponseUtil.error(ResponseCode.UNKOWN_ERROR.getCode(), "权限赋值失败");
-        }
+        }*/
+    }
+    
+    @PostMapping(value="addRoleUrlPath")
+    @ResponseBody
+    public ResponseEntity addRoleUrlPath(@RequestBody JSONObject jsonObj){
+    	logger.info("begin to add roleUrlPath...");
+    	
+    	String system = jsonObj.getString("system");
+    	String url = jsonObj.getString("url");
+    	JSONArray roles = jsonObj.getJSONArray("roles");
+    	
+    	List<Integer> roleIds = roles.stream().map(String::valueOf).map(Integer::parseInt).collect(Collectors.toList());
+    	
+    	List<RoleUrlPath> list = usersService.addRoleUrlPath(system, url, roleIds);
+    	
+    	/*roles.forEach(x->{
+    		Integer roleId = Integer.parseInt(String.valueOf(x));
+    		usersService.addRoleUrlPath(system, url, roleId);
+    	});*/
+    	
+    	return ResponseUtil.success(list);
+    }
+    
+    @GetMapping(value="refreshRoleUrlPath")
+    @ResponseBody
+    public ResponseEntity refreshRoleUrlPath(){
+    	logger.info("begin to refresh roleUrlPath...");
+    	urlRoleCache.removeUrlMap();
+    	urlRoleCache.initUrlMap();
+    	return ResponseUtil.success();
     }
     
     @GetMapping(value="getAllRoles")

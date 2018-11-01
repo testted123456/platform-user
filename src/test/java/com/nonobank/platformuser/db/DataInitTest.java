@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ public class DataInitTest {
         }
 
         userRoles.setOptstatus((short)0);
-        userRoles.setCreatedTime(LocalDateTime.now());
+        userRoles.setCreatedTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         userRoles.setCreatedBy("system");
         return userRoles;
     }

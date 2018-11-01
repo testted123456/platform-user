@@ -25,10 +25,8 @@ public class RoleUrlPath {
     @Column(nullable = false, columnDefinition = "integer COMMENT '角色id'")
     Integer roleId;
 
-
-    @Column(nullable = false, columnDefinition = "varchar(300) COMMENT '角色名称'")
+    @Column(nullable = true, columnDefinition = "varchar(300) COMMENT '角色名称'")
     String roleName;
-
 
     @Column(nullable = false, columnDefinition = "varchar(300) COMMENT '系统名称'")
     String system;
@@ -36,20 +34,16 @@ public class RoleUrlPath {
     @Column(nullable = false, columnDefinition = "varchar(300) COMMENT '路径'")
     String urlPath;
 
-
     @Column(nullable = true, columnDefinition = "varchar(300) COMMENT '创建人'")
     String createdBy;
 
     @Column(nullable = true, columnDefinition = "varchar(300) COMMENT '修改人'")
     String updatedBy;
 
-
     @Column(columnDefinition = "datetime")
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     LocalDateTime createdTime;
-
-
 
     @Column(columnDefinition = " datetime")
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
@@ -58,7 +52,6 @@ public class RoleUrlPath {
 
     @Column(nullable = false, columnDefinition = "smallint(1) COMMENT '0:正常，1:已更新，2:已删除'")
     Short optstatus;
-
 
     public Integer getId() {
         return id;

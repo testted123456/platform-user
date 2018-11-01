@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import com.alibaba.fastjson.JSONObject;
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
+import com.nonobank.platformuser.entity.mysqlEntity.RoleUrlPath;
 import com.nonobank.platformuser.entity.mysqlEntity.User;
 
 /**
@@ -18,6 +19,12 @@ public interface UsersService {
     public boolean grantRoleToUser(String userName,String role);
 
     public User getUserByName(String userName);
+    
+    public User createNewUser(String username, String nickname, String password);
+    
+    public RoleUrlPath addRoleUrlPath(String system, String url, Integer roleId);
+    
+    public List<RoleUrlPath> addRoleUrlPath(String system, String url, List<Integer> roleIds);
     
     public List<Role> getAllRoles();
     
