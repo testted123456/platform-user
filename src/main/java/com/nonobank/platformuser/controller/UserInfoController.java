@@ -258,5 +258,4 @@ public class UserInfoController {
     	List<Map<String, Object>> listOfUsers = usersService.findUsersByRoleName(rolename);
     	return ResponseUtil.success(listOfUsers);
     }
-    
 }

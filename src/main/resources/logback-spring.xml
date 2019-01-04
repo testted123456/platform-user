@@ -35,6 +35,6 @@
 		<appender-ref ref="fileInfoLog" />
 		<appender-ref ref="fileErrorLog" />
 	</root>
-	<!-- <logger name="org.hibernate.SQL" level="DEBUG" />   -->
+	<logger name="org.hibernate.SQL" level="DEBUG" />
 	<logger name="org.hibernate.engine.QueryParameters" level="DEBUG" />  
 </configuration>
