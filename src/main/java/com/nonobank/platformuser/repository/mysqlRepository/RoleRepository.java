@@ -1,11 +1,11 @@
 package com.nonobank.platformuser.repository.mysqlRepository;
 
 import com.nonobank.platformuser.entity.mysqlEntity.Role;
-import com.nonobank.platformuser.entity.mysqlEntity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.util.List;
 
 public interface RoleRepository extends JpaRepository<Role,Integer> {
@@ -18,5 +18,9 @@ public interface RoleRepository extends JpaRepository<Role,Integer> {
     Role findByRoleName(String name);
     
     Role findById(Integer id);
+    
+    List<Role> findByOptstatusNot(Short optStatus);
+    
+    Page<Role> findByOptstatusNot(Short optStatus, Pageable pageable);
 
 }

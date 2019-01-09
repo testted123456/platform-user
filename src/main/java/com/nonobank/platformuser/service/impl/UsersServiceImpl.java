@@ -8,14 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import com.alibaba.fastjson.JSONObject;
 import com.nonobank.platformuser.component.MyUserException;
 import com.nonobank.platformuser.component.RemoteComponent;
@@ -30,6 +31,7 @@ import com.nonobank.platformuser.repository.mysqlRepository.RoleUrlPathRepositor
 import com.nonobank.platformuser.repository.mysqlRepository.UserRepository;
 import com.nonobank.platformuser.repository.mysqlRepository.UserRolesRepository;
 import com.nonobank.platformuser.service.UsersService;
+import com.nonobank.platformuser.utils.UserUtil;
 
 /**
  * Created by tangrubei on 2018/3/1.
@@ -91,11 +93,10 @@ public class UsersServiceImpl implements UsersService {
 			user.setPassword(password);
 			user.setOptstatus((short) 0);
 			user.setCreatedTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
-			user.setCreatedBy("system");
+			user.setCreatedBy(UserUtil.getUser());
 			user.setPasswodChanged(false);
 		}else{
-			user.setUpdatedTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
-			user.setUpdatedBy("system");
+			return null;
 		}
 
 		user.setUsername(username);
@@ -133,7 +134,7 @@ public class UsersServiceImpl implements UsersService {
 	public User login(String username, String password) {
 		User user = this.getUserByName(username);
 
-		if (user.getPassword().equals(password)) {
+		if (null != user && user.getPassword().equals(password)) {
 			return user;
 		} else {
 			throw new MyUserException(ResponseCode.VALIDATION_ERROR.getCode(), "用户名或密码错误");
@@ -442,9 +443,6 @@ public class UsersServiceImpl implements UsersService {
 			map.put("username", x[1]);
 			map.put("nickname", x[2]);
 			map.put("role", x[4]);
-			// List<Object> roles = new ArrayList<>();
-			// roles.add(x[3]);
-			// map.put("roles", roles);
 			listOfUsers.add(map);
 		});
 
@@ -462,9 +460,6 @@ public class UsersServiceImpl implements UsersService {
 			map.put("username", x[1]);
 			map.put("nickname", x[2]);
 			map.put("role", x[4]);
-			// List<Object> roles = new ArrayList<>();
-			// roles.add(x[3]);
-			// map.put("roles", roles);
 			listOfUsers.add(map);
 		});
 
@@ -568,6 +563,51 @@ public class UsersServiceImpl implements UsersService {
 		});
 		
 		return list;
+	}
+
+	@Override
+	public Map<String, Object> getAllUsers(int pageIndex, int pageSize) {
+		// TODO Auto-generated method stub
+		Pageable pageable = new PageRequest(pageIndex, pageSize);
+		Page<Object[]> page = userRepository.findAllUsers(pageable);
+		List<Map<String, Object>> list = new ArrayList<>();;
+		
+		if(page.hasContent()){
+			page.getContent().forEach(x->{
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("id", x[0]);
+				map.put("username", x[1]);
+				map.put("nickname", x[2]);
+				map.put("role", x[3]);
+				list.add(map);
+			});
+		}
+		
+		long count = page.getTotalElements();
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("count", Long.valueOf(count));
+		map.put("list", list);
+		return map;
+	}
+
+	@Override
+	public User getUserById(Integer id) {
+		// TODO Auto-generated method stub
+		return userRepository.findByIdEquals(id);
+	}
+
+	@Override
+	public User delUser(Integer id) {
+		// TODO Auto-generated method stub
+		User user =  userRepository.findByIdEquals(id);
+		
+		if(null != user){
+			user.setOptstatus((short)2);
+			userRepository.save(user);
+		}
+		
+		return user;
 	}
 
 }

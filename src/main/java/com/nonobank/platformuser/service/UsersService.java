@@ -40,6 +40,10 @@ public interface UsersService {
     
     public List<User> getAllUsers();
     
+    public User getUserById(Integer id);
+    
+    public User delUser(Integer id);
+    
     public List<Map<String, Object>> searchByname(String name);
     
     public List<Map<String, Object>> findAllUsers();
@@ -47,5 +51,7 @@ public interface UsersService {
     public List<Map<String, Object>>  findUsersByRoleName(String rolename);
     
     public List<JSONObject> getAllPrivileges();
+    
+	public Map<String, Object> getAllUsers(int pageIndex, int pageSize);
 
 }

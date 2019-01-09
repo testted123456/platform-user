@@ -3,10 +3,8 @@ package com.nonobank.platformuser.controller;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.nonobank.platformuser.component.UrlRoleCache;
@@ -113,18 +110,6 @@ public class UserInfoController {
         return ResponseUtil.success(user);
     }
 
-    /*@RequestMapping(value = "checkSession", method = RequestMethod.GET)
-    public ResponseEntity checkSession(HttpServletRequest request) {
-
-        String sessionId = request.getSession().getId();
-        boolean f = usersService.checkSession(sessionId);
-        if (f) {
-            return ResponseUtil.success();
-        } else {
-            return ResponseUtil.error(ResponseCode.VALIDATION_ERROR.getCode(), "session 失效");
-        }
-    }*/
-
     @RequestMapping(value = "getUesrSessionId", method = RequestMethod.GET)
     public String getSessionId(HttpServletRequest request) {
         return request.getSession().getId();
@@ -150,34 +135,33 @@ public class UserInfoController {
         return ResponseUtil.success(user);
     }
 
-    @RequestMapping(value = "index", method = RequestMethod.GET)
-    public String index(@RequestParam String word) {
-        return "hello " + word;
-    }
-
     /**
      * 给用户添加角色
      * @param grantMap
      * @return
      */
     @RequestMapping(value = "grantRole", method = RequestMethod.POST)
-    public ResponseEntity grantRoleToUser(@RequestBody Map<String, String> grantMap) {
-        String username = grantMap.get(KEY_USERNAME);
-        String role = grantMap.get(KEY_ROLE);
-        String nickname = grantMap.get(KEY_NICKNAME);
+    public ResponseEntity grantRoleToUser(@RequestBody JSONObject jsonUser) {
+    	Integer id = jsonUser.getInteger("id");
+        String username = jsonUser.getString(KEY_USERNAME);
+        String role = jsonUser.getString(KEY_ROLE);
+        String nickname = jsonUser.getString(KEY_NICKNAME);
         
-        User user = usersService.createNewUser(username, nickname, "e10adc3949ba59abbe56e057f20f883e");
+        if(null == id){//新增用户
+        	 User user = usersService.createNewUser(username, nickname, "e10adc3949ba59abbe56e057f20f883e");
+        	 
+        	 if(null == user){
+        		 return ResponseUtil.error(ResponseCode.VALIDATION_ERROR.getCode(), "用户名已存在...");
+        	 }
+        }
         		
         boolean f = usersService.grantRoleToUser(username, role);
         
-        return ResponseUtil.success();
-        /*
-        if (f) {
-            usersService.callRemoteServiceInitUrlMap();
-            return ResponseUtil.success();
-        } else {
-            return ResponseUtil.error(ResponseCode.UNKOWN_ERROR.getCode(), "权限赋值失败");
-        }*/
+        if(f==true){
+        	 return ResponseUtil.success();
+        }else{
+        	return ResponseUtil.error(ResponseCode.DB_ERROR.getCode(), "赋权限识别...");
+        }
     }
     
     @PostMapping(value="addRoleUrlPath")
@@ -193,11 +177,6 @@ public class UserInfoController {
     	
     	List<RoleUrlPath> list = usersService.addRoleUrlPath(system, url, roleIds);
     	
-    	/*roles.forEach(x->{
-    		Integer roleId = Integer.parseInt(String.valueOf(x));
-    		usersService.addRoleUrlPath(system, url, roleId);
-    	});*/
-    	
     	return ResponseUtil.success(list);
     }
     
@@ -210,33 +189,28 @@ public class UserInfoController {
     	return ResponseUtil.success();
     }
     
-    @GetMapping(value="getAllRoles")
-    @ResponseBody
-    public ResponseEntity getAllRoles(){
-    	return ResponseUtil.success(usersService.getAllRoles());
-    }
-
-    @PostMapping(value="addRole")
-    @ResponseBody
-    public ResponseEntity addRole(@RequestBody Role role){
-    		role = usersService.addRole(role);
-        	return ResponseUtil.success(role);
-    }
-
-    @PostMapping(value="delRole")
-    @ResponseBody
-    public ResponseEntity delRole(@RequestBody Role role){
-    	usersService.delRole(role);
-    	return ResponseUtil.success();
-    }
-    
     @GetMapping(value="getAllUsers")
     @ResponseBody
     public ResponseEntity getAllUsers(){
-    	List<Map<String, Object>> users = 
-    			usersService.findAllUsers();
-//    			usersService.getAllUsers();
+    	logger.info("查询所有用户...");
+    	List<Map<String, Object>> users = usersService.findAllUsers();
     	return ResponseUtil.success(users);
+    }
+    
+    @GetMapping(value="getPageUsers")
+    @ResponseBody
+    public ResponseEntity getPageUsers(@RequestParam int pageIndex, @RequestParam int pageSize){
+    	logger.info("分页查询用户列表，page index：{}", pageIndex);
+    	Map<String, Object> users = usersService.getAllUsers(pageIndex, pageSize);
+    	return ResponseUtil.success(users);
+    }
+    
+    @GetMapping(value="delUser")
+    @ResponseBody
+    public ResponseEntity delUser(@RequestParam int id){
+    	logger.info("开始删除用户,id：{}", id);
+    	usersService.delUser(id);
+    	return ResponseUtil.success();
     }
     
     @GetMapping(value="searchByName")
